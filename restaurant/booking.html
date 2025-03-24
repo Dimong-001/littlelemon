@@ -1,0 +1,137 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Little Lemon - Reservation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<div class="max-w-4xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
+    <!-- Header -->
+    <h1 class="text-2xl font-bold mb-4">Make a reservation</h1>
+
+    <!-- Form -->
+    <form id="bookingForm" class="mb-6">
+        <div class="mb-4">
+            <label for="name" class="block text-gray-700 font-medium">Name:</label>
+            <input 
+                type="text" 
+                id="name" 
+                name="name" 
+                required 
+                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+            />
+        </div>
+
+        <div class="mb-4">
+            <label for="reservation_date" class="block text-gray-700 font-medium">Reservation date:</label>
+            <input 
+                type="date" 
+                id="reservation_date" 
+                name="reservation_date" 
+                required 
+                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+            />
+        </div>
+
+        <div class="mb-4">
+            <label for="reservation_slot" class="block text-gray-700 font-medium">Reservation time:</label>
+            <select 
+                id="reservation_slot" 
+                name="reservation_slot" 
+                required 
+                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+            >
+                <option value="10:00">10 AM</option>
+                <option value="12:00">12 PM</option>
+                <option value="14:00">2 PM</option>
+                <option value="16:00">4 PM</option>
+                <option value="18:00">6 PM</option>
+                <option value="20:00">8 PM</option>
+            </select>
+        </div>
+
+        <button 
+            type="submit" 
+            class="w-full bg-green-700 text-white py-2 rounded-lg hover:bg-green-800 transition"
+        >
+            Reserve
+        </button>
+    </form>
+
+    <!-- Display Current Reservations -->
+    <h2 class="text-xl font-bold mb-2">
+        Bookings For <span id="currentDate" class="text-green-700"></span>
+    </h2>
+    <ul id="reservationList" class="space-y-2">
+        <!-- Reservations will be dynamically populated here -->
+    </ul>
+</div>
+
+<script>
+    // Auto-select today's date
+    document.getElementById('reservation_date').valueAsDate = new Date();
+
+    const loadReservations = async () => {
+        const date = document.getElementById('reservation_date').value;
+        const response = await fetch(`/api/reservations/?date=${date}`);
+        const data = await response.json();
+
+        const reservationList = document.getElementById('reservationList');
+        reservationList.innerHTML = ''; // Clear previous reservations
+
+        if (data.length === 0) {
+            reservationList.innerHTML = '<li class="text-gray-500">No bookings available</li>';
+        } else {
+            data.forEach(booking => {
+                reservationList.innerHTML += `
+                    <li class="border-b py-2 flex justify-between">
+                        <span>${booking.first_name}</span>
+                        <span>${booking.reservation_slot}</span>
+                    </li>
+                `;
+            });
+        }
+    };
+
+    // Load reservations when date changes
+    document.getElementById('reservation_date').addEventListener('change', loadReservations);
+
+    // Handle form submission
+    document.getElementById('bookingForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const name = document.getElementById('name').value;
+        const date = document.getElementById('reservation_date').value;
+        const slot = document.getElementById('reservation_slot').value;
+
+        const response = await fetch('/api/reservations/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                first_name: name,
+                reservation_date: date,
+                reservation_slot: slot
+            })
+        });
+
+        if (response.ok) {
+            alert('Reservation added successfully');
+            loadReservations();
+        } else {
+            alert('Error adding reservation');
+        }
+    });
+
+    // Load reservations on page load
+    document.addEventListener('DOMContentLoaded', loadReservations);
+</script>
+
+</body>
+</html>
